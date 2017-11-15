@@ -1,0 +1,1 @@
+1. El navegador debe ser google chrome y debe ser el navegador por defecto.
