@@ -9,6 +9,11 @@
 
     <!-- Bootstrap core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar-inverse .navbar-brand {
+            color: white;
+        }
+    </style>
   </head>
   <body>
 
@@ -17,6 +22,13 @@
             <div class="navbar-header">
                 <a class="navbar-brand" href="#">Bus Tracker</a>
             </div> <!-- .navbar-header -->
+            <ul class="nav navbar-nav pull-right">
+                <li>
+                    <p class="navbar-btn">
+                        <a href="excel" class="btn btn-success">Report</a>
+                    </p> <!-- .navbar-btn -->
+                </li>
+            </ul> <!-- .nav navbar-nav -->
         </div> <!-- .container-fluid -->
     </nav>
 
@@ -86,11 +98,12 @@
             var date = formattedDate(new Date(data.date));
             var contentString = '<div class="card">' +
                 '<div class="card-block">' +
+                    '<p><strong>Nro Placa: </strong>' + data.plate + '</p>' +
                     '<p><strong>latitud: </strong>' + data.latitude + '</p>' +
                     '<p><strong>longitud: </strong>' + data.longitude + '</p>' +
-                    '<p><strong>personsup: </strong>' + data.persons_up + '</p>' +
-                    '<p><strong>personsdown: </strong>' + data.persons_down + '</p>' +
-                    '<p><strong>initialpersons: </strong>' + data.initial_persons + '</p>' +
+                    '<p><strong>personas suben: </strong>' + data.persons_up + '</p>' +
+                    '<p><strong>personas bajan: </strong>' + data.persons_down + '</p>' +
+                    '<p><strong>cantidad inicial personas: </strong>' + data.initial_persons + '</p>' +
                     '<p><strong>fecha: </strong>' + date + '</p>' +
                     '<p><strong>hora: </strong>' + data.time + '</p>' +
                 '</div>' +
@@ -107,7 +120,7 @@
                 hideCloseButton: false,
                 backgroundClassName: 'transparent',
                 arrowStyle: 2,
-                maxHeight: 200,
+                maxHeight: 220,
                 disableAutoPan: true,
             });
 

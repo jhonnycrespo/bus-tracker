@@ -1,4 +1,3 @@
-var async = require('async');
 var path = require('path');
 var SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
@@ -10,12 +9,14 @@ var serverPort = process.env.PORT || 3000;
 var mysql = require('mysql');
 var opn = require('opn');
 var excel = require('excel4node');
+var config = require('./config/settings');
+var moment = require('moment');
 
 var connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'mysql',
-    database: 'bus_tracker'
+    host: config.host,
+    user: config.db_user,
+    password: config.db_password,
+    database: config.db_name
 });
 
 var dbBusRecords = null;
@@ -29,29 +30,17 @@ connection.connect(function(err) {
     console.log('connected to the database');
     opn('http://localhost:' + serverPort);
 
-    connection.query('SELECT * FROM `record`', function(error, results, fields) {
-        if (err) {
-            console.error('Error in query');
-            return;
-        }
-
-        dbBusRecords = results;
-    });
-
     io.on('connection', (socket) => {
         console.log('connection with client stablished');
 
-        if (dbBusRecords) {
-            dbBusRecords.forEach(function(obj) {
+        getRecords().then(results => {
+            results.forEach(obj => {
                 socket.emit('new data', obj);
             });
-        }
+        });
 
         parser.on('data', (stream) => {
             var record = formatJson(stream);
-
-            console.log(record);
-
             connection.query('INSERT INTO record SET ?', record, function(error, results, fields) {
                 if (error)
                     throw error;
@@ -83,7 +72,7 @@ const parser = new Readline({
     delimiter: '\r\n'
 });
 
-const port = new SerialPort(process.argv[2], {
+const port = new SerialPort(config.serial_port, {
     baudRate: 9600,
 });
 
@@ -93,7 +82,7 @@ port.on('open', (error) => {
     if (error)
         throw error;
 
-    console.log('the port %s is open now', process.argv[2]);
+    console.log('the port %s is open now', config.serial_port);
 });
 
 app.get('/', (req, res) => {
@@ -134,7 +123,7 @@ app.get('/excel', (req, res) => {
     worksheet.cell(1,3).string('Longitud').style(stringStyle);
     worksheet.cell(1,4).string('Personas Suben').style(stringStyle);
     worksheet.cell(1,5).string('Personas Bajan').style(stringStyle);
-    worksheet.cell(1,6).string('Cantidad de Personas Inicial').style(stringStyle);
+    worksheet.cell(1,6).string('Cantidad Inicial de Personas').style(stringStyle);
     worksheet.cell(1,7).string('Fecha').style(stringStyle);
     worksheet.cell(1,8).string('Hora').style(stringStyle);
 
@@ -158,7 +147,7 @@ app.get('/excel', (req, res) => {
             worksheet.cell(i + 2, 8).string(obj['time']).style(basicStyle);
         }
 
-        var fileName = 'reporte-' + Date.now() + '.xlsx';
+        var fileName = 'reporte_' + Date.now() + '_' + moment(new Date()).format('DD-MM-YYYY') + '.xlsx';
 
         workbook.write(fileName, function(err, stats) {
             if (err) {
@@ -181,6 +170,7 @@ function formatJson(stream)
     var strArr = stream.split('*');
     var streamJson = {};
 
+    streamJson.plate = '2609HAL';
     streamJson.date = new Date(strArr[0].substring(strArr[0].indexOf(':') + 1));
     var time = strArr[1].substring(strArr[1].indexOf(':') + 1);
     streamJson.time = time.substring(0, 2) + ':' + time.substring(2, time.length);
@@ -191,4 +181,15 @@ function formatJson(stream)
     streamJson.persons_up = strArr[6].substring(strArr[6].indexOf(':') + 1);
 
     return streamJson;
+}
+
+function getRecords() {
+    return new Promise((resolve, reject) => {
+        connection.query('SELECT * FROM `record`', function(error, results, fields) {
+            if (error)
+                reject(error);
+
+            resolve(results);
+        });
+    });
 }
