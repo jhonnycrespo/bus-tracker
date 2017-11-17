@@ -20,6 +20,7 @@ var connection = mysql.createConnection({
 });
 
 var dbBusRecords = null;
+var flag = false;
 
 connection.connect(function(err) {
     if (err) {
@@ -33,19 +34,23 @@ connection.connect(function(err) {
     io.on('connection', (socket) => {
         console.log('connection with client stablished');
 
-        getRecords().then(results => {
-            results.forEach(obj => {
-                socket.emit('new data', obj);
-            });
-        });
+        // getRecords().then(results => {
+        //     results.forEach(obj => {
+        //         socket.emit('new data', obj);
+        //     });
+        // });
 
         parser.on('data', (stream) => {
-            var record = formatJson(stream);
-            connection.query('INSERT INTO record SET ?', record, function(error, results, fields) {
-                if (error)
-                    throw error;
-            });
-            socket.emit('new data', record);
+
+            console.log(stream);
+            if (stream[0] === 'F') {
+                var record = formatJson(stream);
+                connection.query('INSERT INTO record SET ?', record, function(error, results, fields) {
+                    if (error)
+                        throw error;
+                });
+                socket.emit('new data', record);    
+            }
         });
     });
 });
